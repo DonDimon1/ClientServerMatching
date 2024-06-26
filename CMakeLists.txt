@@ -23,9 +23,9 @@ endif()
 # Подключите директории с заголовочными файлами
 include_directories(${Boost_INCLUDE_DIRS})
 # Добавьте исходные файлы проекта
-ADD_EXECUTABLE(Server Server.cpp Common.hpp json.hpp )
+ADD_EXECUTABLE(Server Server.cpp Common.hpp json.hpp Core.hpp Core.cpp)
 ADD_EXECUTABLE(Client Client.cpp Common.hpp json.hpp)
-ADD_EXECUTABLE(Tests Tests.cpp Common.hpp json.hpp)
+ADD_EXECUTABLE(Tests Tests.cpp Core.hpp Core.cpp)
 
 # Линковка с библиотеками Boost
 TARGET_LINK_LIBRARIES(Server PRIVATE Threads::Threads ${Boost_LIBRARIES})

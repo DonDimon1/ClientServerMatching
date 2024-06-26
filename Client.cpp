@@ -44,7 +44,7 @@ std::string ProcessRegistration(tcp::socket& aSocket)
     return ReadMessage(aSocket);
 }
 // Добавляем заявку
-void AddOrder(tcp::socket& s, const std::string& my_id){
+bool AddOrder(tcp::socket& s, const std::string& my_id){
     double volume, price;
     std::string orderType;
     OrderType type;
@@ -58,7 +58,7 @@ void AddOrder(tcp::socket& s, const std::string& my_id){
     else
     {
         std::cout << "Error in selecting the type of order\n";
-        return;
+        return false;
     }
 
 
@@ -74,6 +74,7 @@ void AddOrder(tcp::socket& s, const std::string& my_id){
 
     SendMessage(s, my_id, Requests::Order, order.dump());
     std::cout << "Order sent\n";
+    return true;
 }
 
 
@@ -100,9 +101,9 @@ int main()
             // Тут реализовано "бесконечное" меню.
             std::cout << "Menu:\n"
                          "1) Hello Request\n"
-                         "2) Exit\n"
-                         "3) Balance\n"
-                         "4) Add order\n"
+                         "2) Balance\n"
+                         "3) Add order\n"
+                         "4) Exit\n"
                          << std::endl;
 
             short menu_option_num;
@@ -119,22 +120,24 @@ int main()
                     std::cout << ReadMessage(s);
                     break;
                 }
-                case 2: // Выход
-                {
-                    exit(0);
-                    break;
-                }
-                case 3: // Баланс
+                case 2: // Баланс
                 {
                     SendMessage(s, my_id, Requests::Balance, "");
                     std::cout << ReadMessage(s);
                     break;
+
                 }
-                case 4: // Заявка
+                case 3: // Заявка
                 {
-                    AddOrder(s, my_id);
-                    std::cout << ReadMessage(s);
+                    bool value = AddOrder(s, my_id);
+                    if(value)
+                        std::cout << ReadMessage(s);
                     break;
+                }
+                case 4: // Выход
+                {
+                     exit(0);
+                     break;
                 }
                 default:
                 {
