@@ -19,7 +19,7 @@ struct Order
         this->type = type;
     };
 
-//private:
+    //private:
     std::string userId;
     double volume;
     double price;
@@ -156,14 +156,14 @@ public:
     void start()
     {
         socket_.async_read_some(boost::asio::buffer(data_, max_length),
-            boost::bind(&session::handle_read, this,
-                boost::asio::placeholders::error,
-                boost::asio::placeholders::bytes_transferred));
+                                boost::bind(&session::handle_read, this,
+                                            boost::asio::placeholders::error,
+                                            boost::asio::placeholders::bytes_transferred));
     }
 
     // Обработка полученного сообщения.
     void handle_read(const boost::system::error_code& error,
-        size_t bytes_transferred)
+                     size_t bytes_transferred)
     {
         if (!error)
         {
@@ -203,9 +203,9 @@ public:
             }
 
             boost::asio::async_write(socket_,
-                boost::asio::buffer(reply, reply.size()),
-                boost::bind(&session::handle_write, this,
-                    boost::asio::placeholders::error));
+                                     boost::asio::buffer(reply, reply.size()),
+                                     boost::bind(&session::handle_write, this,
+                                                 boost::asio::placeholders::error));
         }
         else
         {
@@ -219,9 +219,9 @@ public:
         if (!error)
         {
             socket_.async_read_some(boost::asio::buffer(data_, max_length),
-                boost::bind(&session::handle_read, this,
-                    boost::asio::placeholders::error,
-                    boost::asio::placeholders::bytes_transferred));
+                                    boost::bind(&session::handle_read, this,
+                                                boost::asio::placeholders::error,
+                                                boost::asio::placeholders::bytes_transferred));
         }
         else
         {
@@ -247,21 +247,21 @@ public:
 
         session* new_session = new session(io_service_);
         acceptor_.async_accept(new_session->socket(),
-            boost::bind(&server::handle_accept, this, new_session,
-                boost::asio::placeholders::error));
+                               boost::bind(&server::handle_accept, this, new_session,
+                                           boost::asio::placeholders::error));
     }
 
     //Cоздает новый объект session для каждого нового подключения и запускает его.
     void handle_accept(session* new_session,
-        const boost::system::error_code& error)
+                       const boost::system::error_code& error)
     {
         if (!error)
         {
             new_session->start();
             new_session = new session(io_service_);
             acceptor_.async_accept(new_session->socket(),
-                boost::bind(&server::handle_accept, this, new_session,
-                    boost::asio::placeholders::error));
+                                   boost::bind(&server::handle_accept, this, new_session,
+                                               boost::asio::placeholders::error));
         }
         else
         {
