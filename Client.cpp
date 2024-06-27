@@ -43,9 +43,26 @@ std::string ProcessRegistration(tcp::socket& aSocket)
     SendMessage(aSocket, "0", Requests::Registration, name);
     return ReadMessage(aSocket);
 }
+//Проверка валидности данных для заявки
+template <typename T>
+T get_valid_input(const std::string& prompt) {
+    T value;
+    std::cout << prompt;
+    std::cin >> value;
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore();
+        std::cout << "Invalid input\n";
+        return 0;
+    } else {
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // отбросить оставшуюся часть входных данных
+        return value;
+    }
+}
 // Добавляем заявку
 bool AddOrder(tcp::socket& s, const std::string& my_id){
-    double volume, price;
+    int volume;
+    double price;
     std::string orderType;
     OrderType type;
 
@@ -61,11 +78,10 @@ bool AddOrder(tcp::socket& s, const std::string& my_id){
         return false;
     }
 
-
-    std::cout << "Enter volume: \n";
-    std::cin >> volume;
-    std::cout << "Enter price: \n";
-    std::cin >> price;
+    volume = get_valid_input<int>("Enter volume: \n");
+    if(!volume) return false;
+    price = get_valid_input<double>("Enter price: \n");
+    if(!price) return false;
 
     nlohmann::json order;
     order["Volume"] = volume;

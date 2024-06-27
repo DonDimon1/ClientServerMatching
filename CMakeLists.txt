@@ -2,14 +2,26 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.21)
 PROJECT(ClienServerEcn)
 SET(CMAKE_CXX_STANDARD 17)
 
-set (BOOST_ROOT "D:/Coding/boost-build_1_85/") # Путь к библиотеке Boost
-set(BOOST_INCLUDEDIR "${BOOST_ROOT}/include")
-set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib")
-set (Boost_USE_STATIC_LIBS OFF)
-set (Boost_USE_STATIC_RUNTIME OFF)
-set (Boost_USE_MULTITHREADED ON)
-link_libraries(ws2_32 wsock32) #для подключения к проекту необходимых системных библиотек
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_USE_MULTITHREADED ON)
 
+FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
+
+#Проверка нахождения Boost
+if(Boost_FOUND)
+    message(STATUS "Found BOOST ${Boost_VERSION_STRING}")
+else()
+    set(BOOST_ROOT "Path/to/Boost") # Путь к библиотеке Boost вручную
+    set(BOOST_INCLUDEDIR "${BOOST_ROOT}/include")
+    set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib")
+    message(STATUS "Found BOOST ${Boost_VERSION_STRING}")
+endif()
+
+#для подключения к проекту необходимых системных библиотек windows
+if (WIN32)
+    link_libraries(ws2_32 wsock32)
+endif()
 
 # Найдите библиотеки Boost
 FIND_PACKAGE(Boost REQUIRED COMPONENTS system filesystem) # Добавьте необходимые компоненты Boost
