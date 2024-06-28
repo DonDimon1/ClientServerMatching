@@ -33,7 +33,7 @@ std::string ReadMessage(tcp::socket& aSocket) {
     return line;
 }
 
-BOOST_AUTO_TEST_CASE(TestRegisterNewUser) { // Тест регистрации пользователя
+BOOST_AUTO_TEST_CASE(TestRegisterNewUser) { // 1. Тест регистрации пользователя
     std::cout << "Start Test: TestRegisterNewUser" << std::endl;
     boost::asio::io_service io_service_1;
     tcp::socket socket_1 = ConnectClient(io_service_1);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(TestRegisterNewUser) { // Тест регистрации �
     BOOST_CHECK(result); // Предполагаем, что регистрация возвращает "0" как ID первого пользователя, и "1" как ID второго пользователя
 
 };
-BOOST_AUTO_TEST_CASE(BalanceUser) { // Проверка начального баланса
+BOOST_AUTO_TEST_CASE(BalanceUser) { // 2. Проверка начального баланса
     std::cout << "Start Test: BalanceUser" << std::endl;
     boost::asio::io_service io_service;
     tcp::socket socket = ConnectClient(io_service);
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(BalanceUser) { // Проверка начального б�
     else std::cout << "! ! ! ! Test failed ! ! ! ! \n" << std::endl;
     BOOST_CHECK(result);
 };
-BOOST_AUTO_TEST_CASE(ProcessingOrderWithoutExecutingTransaction) { // Тест обработка заявки без совершения сделки
+BOOST_AUTO_TEST_CASE(ProcessingOrderWithoutExecutingTransaction) { // 3. Тест обработка заявки без совершения сделки
     std::cout << "Start Test: ProcessingOrderWithoutExecutingTransaction" << std::endl;
     boost::asio::io_service io_service_1;
     tcp::socket socket = ConnectClient(io_service_1);
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(ProcessingOrderWithoutExecutingTransaction) { // Тест �
     else std::cout << "! ! ! ! Test failed ! ! ! ! \n" << std::endl;
     BOOST_CHECK(result);
 };
-BOOST_AUTO_TEST_CASE(ProcessingOrderTransaction) { // Тест обработка заявки с совершением сделки
+BOOST_AUTO_TEST_CASE(ProcessingOrderTransaction) { // 4. Тест обработка заявки с совершением сделки
     std::cout << "Start Test: ProcessingOrderTransaction" << std::endl;
     boost::asio::io_service io_service;
     tcp::socket socket = ConnectClient(io_service);
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(ProcessingOrderTransaction) { // Тест обработк�
     SendMessage(socket, userId_1, Requests::Order, order.dump());
     std::string response = ReadMessage(socket);
 
-    bool result = (response == "Matched 10.000000 USD at 62.000000 RUB with User 3\n") ? true : false; // Ожидаемый ответ
+    bool result = (response == "Matched 10.000000 USD at 62.000000 RUB with User 3\nOrder partially fulfilled\n") ? true : false; // Ожидаемый ответ
     if(result) std::cout << "Test passed. \n" << std::endl;
     else std::cout << "! ! ! ! Test failed ! ! ! ! \n" << std::endl;
     BOOST_CHECK(result);
 };
-BOOST_AUTO_TEST_CASE(CheckingNonNullBalance) { // Тест проверки ненулевого баланса
+BOOST_AUTO_TEST_CASE(CheckingNonNullBalance) { // 5. Тест проверки ненулевого баланса
     std::cout << "Start Test: CheckingNonNullBalance" << std::endl;
     boost::asio::io_service io_service;
     tcp::socket socket = ConnectClient(io_service);
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(CheckingNonNullBalance) { // Тест проверки не
     else std::cout << "! ! ! ! Test failed ! ! ! ! \n" << std::endl;
     BOOST_CHECK(result);
 };
-BOOST_AUTO_TEST_CASE(FullExecutionOfPartiallyExecutedOrder) { // Полное исполнение частично выполненой заявки
+BOOST_AUTO_TEST_CASE(FullExecutionOfPartiallyExecutedOrder) { // 6. Полное исполнение частично выполненой заявки
     std::cout << "Start Test: FullExecutionOfPartiallyExecutedOrder" << std::endl;
     boost::asio::io_service io_service;
     tcp::socket socket = ConnectClient(io_service);
@@ -144,13 +144,13 @@ BOOST_AUTO_TEST_CASE(FullExecutionOfPartiallyExecutedOrder) { // Полное и
     SendMessage(socket, "3", Requests::Order, order.dump());
     std::string response = ReadMessage(socket);
 
-    bool result = (response == "Matched 10.000000 USD at 62.000000 RUB with User 4\n") ? true : false; // Ожидаемый ответ
+    bool result = (response == "Matched 10.000000 USD at 62.000000 RUB with User 4\nOrder completely fulfilled\n") ? true : false; // Ожидаемый ответ
     if(result) std::cout << "Test passed. \n" << std::endl;
     else std::cout << "! ! ! ! Test failed ! ! ! ! \n" << std::endl;
     BOOST_CHECK(result);
 };
 
-BOOST_AUTO_TEST_CASE(ExecutionWithMultipleOrders) { // Исполнение с несколькими заявками
+BOOST_AUTO_TEST_CASE(ExecutionWithMultipleOrders) { // 7. Исполнение с несколькими заявками
     std::cout << "Start Test: ExecutionWithMultipleOrders" << std::endl;
     boost::asio::io_service io_service_1;
     tcp::socket socket_1 = ConnectClient(io_service_1);
@@ -195,7 +195,9 @@ BOOST_AUTO_TEST_CASE(ExecutionWithMultipleOrders) { // Исполнение с �
     order_3["TypeOrder"] = type_3;
     SendMessage(socket_3, userId_3, Requests::Order, order_3.dump());
     std::string response_3 = ReadMessage(socket_3);
-    std::string ExpectedResult = "Matched 20.000000 USD at 63.000000 RUB with User 6\nMatched 10.000000 USD at 62.000000 RUB with User 5\n"; // Ожидаемый ответ
+    std::string ExpectedResult = "Matched 20.000000 USD at 63.000000 RUB with User 6\n" // Ожидаемый ответ
+                                 "Matched 10.000000 USD at 62.000000 RUB with User 5\n"
+                                 "Order partially fulfilled\n";
     bool check_3 = (response_3 == ExpectedResult) ? true : false;
 
     bool result = (check_1 && check_2 && check_3) ? true : false;

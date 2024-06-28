@@ -5,7 +5,8 @@
 #include <boost/asio.hpp>
 #include "json.hpp"
 #include "Common.hpp"
-#include <vector>
+#include <queue>
+
 
 // Заявка на покупку/продажу
 struct Order
@@ -23,6 +24,22 @@ struct Order
     double volume;
     double price;
     OrderType type;
+};
+// Компараторы для приоритетной очереди
+struct BuyOrderComparator
+{
+    bool operator()(const Order& a, const Order& b) const
+    {
+        return a.price < b.price;
+    }
+};
+
+struct SellOrderComparator
+{
+    bool operator()(const Order& a, const Order& b) const
+    {
+        return a.price > b.price;
+    }
 };
 
 class Core
@@ -45,8 +62,8 @@ private:
     static Core* instancePtr;
     std::map<size_t, std::string> mUsers;                   // Храним пользователей: ключ-id, значение-имя
     std::map<size_t, std::pair<double, double>> balance;    // Баланс пользователя: ключ-id, Значение <USD, RUB>
-    std::vector<Order> buyOrders;                           // Все заявки на покупку
-    std::vector<Order> sellOrders;                          // Все заявки на продажу
+    std::priority_queue<Order, std::vector<Order>, BuyOrderComparator> buyOrders;  // Очередь заявок на покупку
+    std::priority_queue<Order, std::vector<Order>, SellOrderComparator> sellOrders; // Очередь заявок на продажу
 
     void UpdateBalance(const std::string& buyerId, const std::string& sellerId, double volume, double price);
     std::string MatchOrder(Order& order);

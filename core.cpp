@@ -50,11 +50,9 @@ std::string Core::AddOrder(const std::string& userId, double volume, double pric
     std::string response = MatchOrder(order);   // Считаем
     if (order.volume > 0) {                     // Если у заявки остался объём, сохраняем её в нужный вектор
         if (type == OrderType::Buy) {
-            buyOrders.push_back(order);
-            std::sort(buyOrders.begin(), buyOrders.end(), [](const Order& a, const Order& b) { return a.price > b.price; });
+            buyOrders.push(order);
         } else {
-            sellOrders.push_back(order);
-            std::sort(sellOrders.begin(), sellOrders.end(), [](const Order& a, const Order& b) { return a.price < b.price; });
+            sellOrders.push(order);
         }
     }
     return response;
@@ -68,39 +66,103 @@ void Core::UpdateBalance(const std::string& buyerId, const std::string& sellerId
 }
 // Обработка нового запроса
 std::string Core::MatchOrder(Order& order) {
-    std::vector<Order>& orders = (order.type == OrderType::Buy) ? sellOrders : buyOrders;   // Определяем вектор нужного типа ордера
-    std::string response;                                                                   // Строка для хранения результата выполнения функции
-    double remainingVolume = order.volume;                                                  // Оставшийся объем текущего ордера, который еще не был выполнен
+    std::string response;
+    bool isMatched = false; // Флаг для проверки выполнения хотя бы одной транзакции
 
-    for (auto it = orders.begin(); it != orders.end();) {                                   // Проходим по выбранному вектору ордеров
-        if ((order.type == OrderType::Buy && order.price >= it->price) ||                   // Может ли текущий ордер быть выполнен с рассматриваемым ордером
-            (order.type == OrderType::Sell && order.price <= it->price)) {
+    if (order.type == OrderType::Buy)
+    {
+        while (!sellOrders.empty() && order.volume > 0)
+        {
+            Order topOrder = sellOrders.top();
+            if (order.price < topOrder.price)
+                break;
 
-            double matchedVolume = std::min(remainingVolume, it->volume);                   // Рассчитывается объем, который может быть выполнен
-            if (order.type == OrderType::Buy) {                                             // Обновляются балансы пользователей, участвующих в сделке
-                UpdateBalance(order.userId, it->userId, matchedVolume, it->price);
-            } else {
-                UpdateBalance(it->userId, order.userId, matchedVolume, it->price);
+            isMatched = true; // Устанавливаем флаг в true, если была выполнена хотя бы одна транзакция
+            double matchedVolume = std::min(order.volume, topOrder.volume);
+            UpdateBalance(order.userId, topOrder.userId, matchedVolume, topOrder.price);
+
+            response += "Matched " + std::to_string(matchedVolume) + " USD at " + std::to_string(topOrder.price) + " RUB with User " + topOrder.userId + "\n";
+
+            order.volume -= matchedVolume;
+            topOrder.volume -= matchedVolume;
+
+            if (topOrder.volume <= 0) {              // Если объем рассматриваемого ордера исчерпан, он удаляется из вектора ордеров
+                sellOrders.pop();
             }
-            // Информация о выполненной сделке в строку ответа
-            response += "Matched " + std::to_string(matchedVolume) + " USD at " + std::to_string(it->price) + " RUB with User " + it->userId + "\n";
-            remainingVolume -= matchedVolume;   // Обновляются оставшийся объем текущего ордера и объем рассматриваемого ордера
-            it->volume -= matchedVolume;
-            if (it->volume <= 0) {              // Если объем рассматриваемого ордера исчерпан, он удаляется из вектора ордеров
-                it = orders.erase(it);
-            } else {
-                ++it;
-            }
-            if (remainingVolume <= 0) {         // Если оставшийся объем текущего ордера исчерпан, цикл прерывается.
+            if (order.volume <= 0) {         // Если оставшийся объем текущего ордера исчерпан, цикл прерывается.
                 break;
             }
-        } else {
-            ++it;
+        }
+    }
+    else
+    {
+        while (!buyOrders.empty() && order.volume > 0)
+        {
+            Order topOrder = buyOrders.top();
+            if (order.price > topOrder.price)
+                break;
+
+            isMatched = true; // Устанавливаем флаг в true, если была выполнена хотя бы одна транзакция
+            double matchedVolume = std::min(order.volume, topOrder.volume);
+            UpdateBalance(topOrder.userId, order.userId, matchedVolume, topOrder.price);
+
+            response += "Matched " + std::to_string(matchedVolume) + " USD at " + std::to_string(topOrder.price) + " RUB with User " + topOrder.userId + "\n";
+
+            order.volume -= matchedVolume;
+            topOrder.volume -= matchedVolume;
+
+            if (topOrder.volume <= 0) {              // Если объем рассматриваемого ордера исчерпан, он удаляется из вектора ордеров
+                buyOrders.pop();
+            }
+            if (order.volume <= 0) {         // Если оставшийся объем текущего ордера исчерпан, цикл прерывается.
+                break;
+            }
         }
     }
 
-    order.volume = remainingVolume;             // Обновляется объем текущего ордера (если он не полностью выполнен).
-    return response.empty() ? "No matching orders found\n" : response;
+    if (!isMatched)
+        return "No matching orders found\n";
+    else if(order.volume > 0)
+        return response + "Order partially fulfilled\n";
+    else
+        return response + "Order completely fulfilled\n";
+
+    //return order.volume > 0 ?  : response + "Order completely fulfilled\n";
+    //return response;
+
+    // std::vector<Order>& orders = (order.type == OrderType::Buy) ? sellOrders : buyOrders;   // Определяем вектор нужного типа ордера
+    // std::string response;                                                                   // Строка для хранения результата выполнения функции
+    // double remainingVolume = order.volume;                                                  // Оставшийся объем текущего ордера, который еще не был выполнен
+
+    // for (auto it = orders.begin(); it != orders.end();) {                                   // Проходим по выбранному вектору ордеров
+    //     if ((order.type == OrderType::Buy && order.price >= it->price) ||                   // Может ли текущий ордер быть выполнен с рассматриваемым ордером
+    //         (order.type == OrderType::Sell && order.price <= it->price)) {
+
+    //         double matchedVolume = std::min(remainingVolume, it->volume);                   // Рассчитывается объем, который может быть выполнен
+    //         if (order.type == OrderType::Buy) {                                             // Обновляются балансы пользователей, участвующих в сделке
+    //             UpdateBalance(order.userId, it->userId, matchedVolume, it->price);
+    //         } else {
+    //             UpdateBalance(it->userId, order.userId, matchedVolume, it->price);
+    //         }
+    //         // Информация о выполненной сделке в строку ответа
+    //         response += "Matched " + std::to_string(matchedVolume) + " USD at " + std::to_string(it->price) + " RUB with User " + it->userId + "\n";
+    //         remainingVolume -= matchedVolume;   // Обновляются оставшийся объем текущего ордера и объем рассматриваемого ордера
+    //         it->volume -= matchedVolume;
+    //         if (it->volume <= 0) {              // Если объем рассматриваемого ордера исчерпан, он удаляется из вектора ордеров
+    //             it = orders.erase(it);
+    //         } else {
+    //             ++it;
+    //         }
+    //         if (remainingVolume <= 0) {         // Если оставшийся объем текущего ордера исчерпан, цикл прерывается.
+    //             break;
+    //         }
+    //     } else {
+    //         ++it;
+    //     }
+    // }
+
+    // order.volume = remainingVolume;             // Обновляется объем текущего ордера (если он не полностью выполнен).
+    // return response.empty() ? "No matching orders found\n" : response;
 }
 
 
